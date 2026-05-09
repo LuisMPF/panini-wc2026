@@ -371,8 +371,7 @@ function buildStickers(){
   TEAMS.forEach(t=>{
     for(let n=1;n<=20;n++){
       const sn=n===1?'Escudo':n===2?'Equipa':`Jogador ${n-2}`;
-      const foil=n===1;
-      s.push({id:`${t.code}${n}`,section:t.code,group:t.group,teamCode:t.code,teamName:t.name,teamFlag:t.flag,name:`${t.name} - ${sn}`,shortName:sn,foil,num:n});
+      s.push({id:`${t.code}${n}`,section:t.code,group:t.group,teamCode:t.code,teamName:t.name,teamFlag:t.flag,name:`${t.name} - ${sn}`,shortName:sn,foil:n===1,num:n});
     }
   });
   return s;
@@ -391,6 +390,8 @@ async function sha256(str){
 
 const isAuth=id=>sessionStorage.getItem('auth_'+id)==='1';
 const setAuth=id=>sessionStorage.setItem('auth_'+id,'1');
+
+function q(s){return JSON.stringify(s).replace(/"/g,'&quot;');}
 
 let toastTmr;
 function showToast(msg){
@@ -448,7 +449,7 @@ async function loadCollections(){
       :cols.map(c=>{
           const owned=c.stickers?Object.values(c.stickers).filter(s=>s.o).length:0;
           const pct=Math.round(owned/980*100);
-          return `<div class="collection-card" onclick="openCollection(${JSON.stringify(c.id)},${JSON.stringify(c.name)})">
+          return `<div class="collection-card" onclick="openCollection(${q(c.id)},${q(c.name)})">
             <div class="col-icon">⚽</div>
             <div class="col-info">
               <div class="col-name">${esc(c.name)}</div>
@@ -469,12 +470,12 @@ window.openCollection=async function(colId,colName){
     `<div class="form-group" style="margin-bottom:4px">
       <label class="form-label">Password</label>
       <input class="input" id="auth-pass" type="password" placeholder="Password"
-        onkeydown="if(event.key==='Enter')doLogin(${JSON.stringify(colId)},${JSON.stringify(colName)})"/>
+        onkeydown="if(event.key==='Enter')doLogin(${q(colId)},${q(colName)})"/>
     </div>
     <div class="form-error hidden" id="auth-error">Password incorreta.</div>
     <div class="modal-actions" style="margin-top:14px">
       <button class="btn btn-ghost" onclick="closeModal()">Cancelar</button>
-      <button class="btn btn-primary" onclick="doLogin(${JSON.stringify(colId)},${JSON.stringify(colName)})">Entrar</button>
+      <button class="btn btn-primary" onclick="doLogin(${q(colId)},${q(colName)})">Entrar</button>
     </div>`
   );
   setTimeout(()=>document.getElementById('auth-pass')?.focus(),80);
@@ -553,7 +554,7 @@ function renderDashboard(){
 function renderBrowser(){
   const tabs=[...GROUPS,'✦'];
   document.getElementById('browser-tabs').innerHTML=tabs.map(g=>
-    `<button class="tab-btn${g===activeBG?' active':''}" onclick="setBG(${JSON.stringify(g)})">${g==='✦'?'Especiais':'Grupo '+g}</button>`
+    `<button class="tab-btn${g===activeBG?' active':''}" onclick="setBG('${g}')">${g==='✦'?'Especiais':'Grupo '+g}</button>`
   ).join('');
   renderBrowserContent();
 }
@@ -572,7 +573,7 @@ function renderBrowserContent(){
     const to=ids.filter(id=>state[id]?.o).length;
     const exp=expandedTeam===t.code;
     return `<div class="team-section">
-      <div class="team-header${exp?' expanded':''}" onclick="toggleTeam(${JSON.stringify(t.code)})">
+      <div class="team-header${exp?' expanded':''}" onclick="toggleTeam('${t.code}')">
         <div class="team-flag">${t.flag}</div>
         <div class="team-name">${esc(t.name)}</div>
         <div class="team-count${to===20?' complete':''}">${to}/20</div>
@@ -596,8 +597,8 @@ function cellHtml(id){
   const st=state[id]||{o:false,d:0};
   const cls=['sticker-cell',st.o?'owned':'',st.d>0?'has-dupes':'',s.foil?'foil':''].filter(Boolean).join(' ');
   const icon=st.o?'✓':(s.foil?'✦':'');
-  const badge=st.d>0?'<div class="dupe-badge">+'+st.d+'</div>':'';
-  return '<div class="'+cls+'" id="sc-'+id+'" onclick="tapSticker('+JSON.stringify(id)+')" oncontextmenu="longTap(event,'+JSON.stringify(id)+')" title="'+esc(s.name)+'">'+badge+'<div class="sticker-num">'+id+'</div><div class="sticker-icon">'+icon+'</div></div>';
+  const badge=st.d>0?`<div class="dupe-badge">+${st.d}</div>`:'';
+  return `<div class="${cls}" id="sc-${id}" onclick="tapSticker('${id}')" oncontextmenu="longTap(event,'${id}')" title="${esc(s.name)}">${badge}<div class="sticker-num">${id}</div><div class="sticker-icon">${icon}</div></div>`;
 }
 
 window.toggleTeam=function(code){
@@ -619,13 +620,13 @@ window.longTap=function(e,id){
 function openDupeModal(id){
   const s=BY_ID[id];
   const st=state[id]||{o:false,d:0};
-  openModal(id,esc(s.name),
-    '<div class="modal-counter">'+
-    '<button class="counter-btn" onclick="adjustDupe('+JSON.stringify(id)+',-1)">−</button>'+
-    '<div class="counter-val" id="mc-val">'+st.d+'</div>'+
-    '<button class="counter-btn" onclick="adjustDupe('+JSON.stringify(id)+',1)">+</button>'+
-    '</div><div style="text-align:center;font-size:12px;color:var(--muted)">Número de repetidos para trocar</div>'+
-    '<div class="modal-actions"><button class="btn btn-ghost" onclick="closeModal()">Fechar</button></div>'
+  openModal(id,s.name,
+    `<div class="modal-counter">
+    <button class="counter-btn" onclick="adjustDupe('${id}',-1)">−</button>
+    <div class="counter-val" id="mc-val">${st.d}</div>
+    <button class="counter-btn" onclick="adjustDupe('${id}',1)">+</button>
+    </div><div style="text-align:center;font-size:12px;color:var(--muted)">Número de repetidos para trocar</div>
+    <div class="modal-actions"><button class="btn btn-ghost" onclick="closeModal()">Fechar</button></div>`
   );
 }
 
@@ -641,8 +642,8 @@ function updateCell(id){
   const s=BY_ID[id];const st=state[id]||{o:false,d:0};
   cell.className=['sticker-cell',st.o?'owned':'',st.d>0?'has-dupes':'',s.foil?'foil':''].filter(Boolean).join(' ');
   const icon=st.o?'✓':(s.foil?'✦':'');
-  const badge=st.d>0?'<div class="dupe-badge">+'+st.d+'</div>':'';
-  cell.innerHTML=badge+'<div class="sticker-num">'+id+'</div><div class="sticker-icon">'+icon+'</div>';
+  const badge=st.d>0?`<div class="dupe-badge">+${st.d}</div>`:'';
+  cell.innerHTML=badge+`<div class="sticker-num">${id}</div><div class="sticker-icon">${icon}</div>`;
 }
 
 async function saveSticker(id){
@@ -661,17 +662,16 @@ function renderMissing(){
 }
 
 window.filterMissing=function(){
-  const q=(document.getElementById('missing-search').value||'').toLowerCase();
-  const list=q?missingCache.filter(s=>s.id.toLowerCase().includes(q)||s.name.toLowerCase().includes(q)):missingCache;
+  const q2=(document.getElementById('missing-search').value||'').toLowerCase();
+  const list=q2?missingCache.filter(s=>s.id.toLowerCase().includes(q2)||s.name.toLowerCase().includes(q2)):missingCache;
   const el=document.getElementById('missing-list');
   if(!list.length){
-    el.innerHTML='<div class="empty-state"><div class="empty-icon">'+(missingCache.length?'🔍':'🎉')+'</div><div class="empty-text">'+(missingCache.length?'Nenhum resultado':'Coleção completa!')+'</div><div class="empty-sub">'+(missingCache.length?'Tenta outra pesquisa':'Tens todos os 980 cromos!')+'</div></div>';
+    el.innerHTML=`<div class="empty-state"><div class="empty-icon">${missingCache.length?'🔍':'🎉'}</div><div class="empty-text">${missingCache.length?'Nenhum resultado':'Coleção completa!'}</div><div class="empty-sub">${missingCache.length?'Tenta outra pesquisa':'Tens todos os 980 cromos!'}</div></div>`;
     return;
   }
   el.innerHTML=groupByTeam(list).map(({teamName,teamFlag,items})=>
-    '<div class="list-group"><div class="list-group-header"><span class="lg-flag">'+teamFlag+'</span><span class="lg-name">'+esc(teamName)+'</span><span class="lg-count">'+items.length+' em falta</span></div>'+
-    items.map(s=>'<div class="list-item"><span class="li-id">'+s.id+'</span><span class="li-name">'+esc(s.shortName)+'</span>'+(s.foil?'<span class="li-foil">✦ Foil</span>':'')+
-      '<button class="li-btn" onclick="markOwned('+JSON.stringify(s.id)+')">✓ Tenho</button></div>').join('')+'</div>'
+    `<div class="list-group"><div class="list-group-header"><span class="lg-flag">${teamFlag}</span><span class="lg-name">${esc(teamName)}</span><span class="lg-count">${items.length} em falta</span></div>`+
+    items.map(s=>`<div class="list-item"><span class="li-id">${s.id}</span><span class="li-name">${esc(s.shortName)}</span>${s.foil?'<span class="li-foil">✦ Foil</span>':''}<button class="li-btn" onclick="markOwned('${s.id}')">✓ Tenho</button></div>`).join('')+'</div>'
   ).join('');
 };
 
@@ -689,9 +689,8 @@ function renderDuplicates(){
     return;
   }
   el.innerHTML=groupByTeam(dupes).map(({teamName,teamFlag,items})=>
-    '<div class="list-group"><div class="list-group-header"><span class="lg-flag">'+teamFlag+'</span><span class="lg-name">'+esc(teamName)+'</span></div>'+
-    items.map(s=>'<div class="list-item"><span class="li-id">'+s.id+'</span><span class="li-name">'+esc(s.shortName)+'</span>'+(s.foil?'<span class="li-foil">✦ Foil</span>':'')+
-      '<div class="dupe-controls"><button class="dupe-btn" onclick="changeDupe('+JSON.stringify(s.id)+',-1)">−</button><span class="dupe-count">'+(state[s.id]?.d||0)+'</span><button class="dupe-btn" onclick="changeDupe('+JSON.stringify(s.id)+',1)">+</button></div></div>').join('')+'</div>'
+    `<div class="list-group"><div class="list-group-header"><span class="lg-flag">${teamFlag}</span><span class="lg-name">${esc(teamName)}</span></div>`+
+    items.map(s=>`<div class="list-item"><span class="li-id">${s.id}</span><span class="li-name">${esc(s.shortName)}</span>${s.foil?'<span class="li-foil">✦ Foil</span>':''}<div class="dupe-controls"><button class="dupe-btn" onclick="changeDupe('${s.id}',-1)">−</button><span class="dupe-count">${state[s.id]?.d||0}</span><button class="dupe-btn" onclick="changeDupe('${s.id}',1)">+</button></div></div>`).join('')+'</div>'
   ).join('');
 }
 
