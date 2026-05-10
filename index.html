@@ -498,8 +498,10 @@ window.doLogin=async function(colId,colName){
 async function enterCollection(colId,colName){
   curId=colId;curName=colName;
   document.getElementById('nav-col-name').textContent=colName;
-  const snap=await getDoc(doc(db,COL,colId));
-  state=snap.exists()?(snap.data().stickers||{}):{}
+  try{
+    const snap=await getDoc(doc(db,COL,colId));
+    state=snap.exists()?(snap.data().stickers||{}):{}
+  }catch(e){state={};}
   navTo('dashboard');
 }
 
@@ -542,6 +544,8 @@ function renderDashboard(){
   let complete=0;
   TEAMS.forEach(t=>{if(Array.from({length:20},(_,i)=>`${t.code}${i+1}`).every(id=>state[id]?.o))complete++;});
   document.getElementById('stat-teams').textContent=complete+'/48';
+  const fwcIds=Array.from({length:20},(_,i)=>`FWC${i+1}`);
+  const fwcOwned=fwcIds.filter(id=>state[id]?.o).length;
   document.getElementById('group-section').innerHTML=GROUPS.map(g=>{
     const teams=TEAMS.filter(t=>t.group===g);
     return `<div class="group-block"><div class="group-label">Grupo ${g}</div><div class="teams-row">${
@@ -551,7 +555,7 @@ function renderDashboard(){
         return `<div class="team-mini"><div class="team-mini-flag">${t.flag}</div><div class="team-mini-name">${t.name.split(' ')[0]}</div><div class="team-mini-bar"><div class="team-mini-fill" style="width:${to/20*100}%"></div></div></div>`;
       }).join('')
     }</div></div>`;
-  }).join('');
+  }).join('')+`<div class="group-block"><div class="group-label">Especiais</div><div class="teams-row"><div class="team-mini"><div class="team-mini-flag">✦</div><div class="team-mini-name">FWC 1–20</div><div class="team-mini-bar"><div class="team-mini-fill" style="width:${fwcOwned/20*100}%"></div></div></div></div></div>`;
 }
 
 function renderBrowser(){
