@@ -363,11 +363,10 @@ const GROUPS=['A','B','C','D','E','F','G','H','I','J','K','L'];
 function buildStickers(){
   const s=[];
   ['FIFA World Cup 2026™','Official Emblem','Official Mascot','Official Slogan','Official Ball',
-   'Host Country: Canada','Host Country: Mexico','Host Country: United States','Host Cities'
-  ].forEach((name,i)=>s.push({id:`INT${i+1}`,section:'INT',group:'special',teamCode:'INT',teamName:'Introdução',teamFlag:'🌍',name,shortName:name,foil:i<5,num:i+1}));
-  ['Uruguay 1930','Italy 1934','Italy 1938','Uruguay 1950','West Germany 1954',
+   'Host Country: Canada','Host Country: Mexico','Host Country: United States','Host Cities',
+   'Uruguay 1930','Italy 1934','Italy 1938','Uruguay 1950','West Germany 1954',
    'Brazil 1958','Brazil 1962','England 1966','Brazil 1970','West Germany 1974','Argentina 1978'
-  ].forEach((name,i)=>s.push({id:`MUS${i+1}`,section:'MUS',group:'special',teamCode:'MUS',teamName:'Museu FIFA',teamFlag:'🏆',name,shortName:name,foil:false,num:i+1}));
+  ].forEach((name,i)=>s.push({id:`FWC${i+1}`,section:'FWC',group:'special',teamCode:'FWC',teamName:'Especiais',teamFlag:'✦',name,shortName:name,foil:i<9,num:i+1}));
   TEAMS.forEach(t=>{
     for(let n=1;n<=20;n++){
       const sn=n===1?'Escudo':n===2?'Equipa':`Jogador ${n-2}`;
@@ -498,7 +497,7 @@ async function enterCollection(colId,colName){
   curId=colId;curName=colName;
   document.getElementById('nav-col-name').textContent=colName;
   const snap=await getDoc(doc(db,COL,colId));
-  state=snap.exists()?(snap.data().stickers||{}):{};
+  state=snap.exists()?(snap.data().stickers||{}):{}
   navTo('dashboard');
 }
 
@@ -577,7 +576,7 @@ function renderBrowserContent(){
         <div class="team-flag">${t.flag}</div>
         <div class="team-name">${esc(t.name)}</div>
         <div class="team-count${to===20?' complete':''}">${to}/20</div>
-        <div class="team-chevron">⌄</div>
+        <div class="team-chevron">⏄</div>
       </div>
       <div class="sticker-grid${exp?' visible':''}">${ids.map(id=>cellHtml(id)).join('')}</div>
     </div>`;
@@ -585,11 +584,9 @@ function renderBrowserContent(){
 }
 
 function renderSpecial(el){
-  const iIds=Array.from({length:9},(_,i)=>`INT${i+1}`);
-  const mIds=Array.from({length:11},(_,i)=>`MUS${i+1}`);
+  const fwcIds=Array.from({length:20},(_,i)=>`FWC${i+1}`);
   el.innerHTML=
-    `<div class="special-section"><div class="special-title">🌍 Introdução (${iIds.filter(id=>state[id]?.o).length}/9)</div><div class="special-grid">${iIds.map(id=>cellHtml(id)).join('')}</div></div>
-     <div class="special-section"><div class="special-title">🏆 Museu FIFA (${mIds.filter(id=>state[id]?.o).length}/11)</div><div class="special-grid">${mIds.map(id=>cellHtml(id)).join('')}</div></div>`;
+    `<div class="special-section"><div class="special-title">✦ Especiais (${fwcIds.filter(id=>state[id]?.o).length}/20)</div><div class="special-grid">${fwcIds.map(id=>cellHtml(id)).join('')}</div></div>`;
 }
 
 function cellHtml(id){
