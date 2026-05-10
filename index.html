@@ -232,7 +232,7 @@ input{font-family:'Barlow',sans-serif}
       </div>
       <div class="stat-grid">
         <div class="stat-card"><div class="stat-value v-owned" id="stat-owned">0</div><div class="stat-label">Tenho</div></div>
-        <div class="stat-card"><div class="stat-value v-missing" id="stat-missing">980</div><div class="stat-label">Em Falta</div></div>
+        <div class="stat-card"><div class="stat-value v-missing" id="stat-missing">1060</div><div class="stat-label">Em Falta</div></div>
         <div class="stat-card"><div class="stat-value v-dupes" id="stat-dupes">0</div><div class="stat-label">Repetidos</div></div>
         <div class="stat-card"><div class="stat-value v-teams" id="stat-teams">0/48</div><div class="stat-label">Equipas Completas</div></div>
       </div>
@@ -249,7 +249,7 @@ input{font-family:'Barlow',sans-serif}
   <div id="view-missing" class="view">
     <div class="stats-bar">
       <span>Em falta:</span><span class="stats-count" id="missing-count">—</span>
-      <span style="color:var(--muted);font-size:12px">/ 980 cromos</span>
+      <span style="color:var(--muted);font-size:12px">/ 1060 cromos</span>
     </div>
     <div class="search-bar"><input class="search-input" id="missing-search" type="text" placeholder="Pesquisar por ID ou nome..." oninput="filterMissing()"/></div>
     <div id="missing-list"></div>
@@ -362,6 +362,30 @@ const TEAMS=[
   {code:'PAN',name:'Panama',group:'L',flag:'🇵🇦'},
 ];
 const GROUPS=['A','B','C','D','E','F','G','H','I','J','K','L'];
+const EXTRA_PLAYERS=[
+  {code:'ARG',name:'Lionel Messi',flag:'🇦🇷'},
+  {code:'BEL',name:'Jérémy Doku',flag:'🇧🇪'},
+  {code:'BRA',name:'Vinícius Júnior',flag:'🇧🇷'},
+  {code:'CAN',name:'Alphonso Davies',flag:'🇨🇦'},
+  {code:'COL',name:'Luis Díaz',flag:'🇨🇴'},
+  {code:'CRO',name:'Luka Modrić',flag:'🇭🇷'},
+  {code:'ECU',name:'Moisés Caicedo',flag:'🇪🇨'},
+  {code:'EGY',name:'Mohamed Salah',flag:'🇪🇬'},
+  {code:'ENG',name:'Jude Bellingham',flag:'🏴󠁧󠁢󠁥󠁮󠁧󠁿'},
+  {code:'FRA',name:'Kylian Mbappé',flag:'🇫🇷'},
+  {code:'GER',name:'Florian Wirtz',flag:'🇩🇪'},
+  {code:'KOR',name:'Heungmin Son',flag:'🇰🇷'},
+  {code:'MEX',name:'Raúl Jiménez',flag:'🇲🇽'},
+  {code:'MAR',name:'Achraf Hakimi',flag:'🇲🇦'},
+  {code:'NED',name:'Cody Gakpo',flag:'🇳🇱'},
+  {code:'NOR',name:'Erling Haaland',flag:'🇳🇴'},
+  {code:'POR',name:'Cristiano Ronaldo',flag:'🇵🇹'},
+  {code:'ESP',name:'Lamine Yamal',flag:'🇪🇸'},
+  {code:'URU',name:'Federico Valverde',flag:'🇺🇾'},
+  {code:'USA',name:'Christian Pulisic',flag:'🇺🇸'},
+];
+const VARIANTS=['N','B','P','O'];
+const VARIANT_LABEL={N:'Normal',B:'Bronze',P:'Prata',O:'Ouro'};
 
 function buildStickers(){
   const s=[];
@@ -376,10 +400,16 @@ function buildStickers(){
       s.push({id:`${t.code}${n}`,section:t.code,group:t.group,teamCode:t.code,teamName:t.name,teamFlag:t.flag,name:`${t.name} - ${sn}`,shortName:sn,foil:n===1,num:n});
     }
   });
+  EXTRA_PLAYERS.forEach(p=>{
+    VARIANTS.forEach((v,i)=>{
+      s.push({id:`X${p.code}${v}`,section:'EXTRA',group:'extra',teamCode:`X${p.code}`,teamName:p.name,teamFlag:p.flag,name:`${p.name} — ${VARIANT_LABEL[v]}`,shortName:VARIANT_LABEL[v],foil:v==='P'||v==='O',num:i+1});
+    });
+  });
   return s;
 }
 const STICKERS=buildStickers();
 const BY_ID=Object.fromEntries(STICKERS.map(s=>[s.id,s]));
+const TOTAL=STICKERS.length;
 
 let curId=null,curName=null,state={},activeBG='A',expandedTeam=null;
 const saveTimers={};
@@ -450,12 +480,12 @@ async function loadCollections(){
       ?'<div style="text-align:center;color:var(--muted);padding:16px 0;font-size:14px">Ainda não tens coleções — cria a primeira abaixo 👇</div>'
       :cols.map(c=>{
           const owned=c.stickers?Object.values(c.stickers).filter(s=>s.o).length:0;
-          const pct=Math.round(owned/980*100);
+          const pct=Math.round(owned/TOTAL*100);
           return `<div class="collection-card" onclick="openCollection(${q(c.id)},${q(c.name)})">
             <div class="col-icon">⚽</div>
             <div class="col-info">
               <div class="col-name">${esc(c.name)}</div>
-              <div class="col-progress">${owned} / 980 cromos (${pct}%)</div>
+              <div class="col-progress">${owned} / ${TOTAL} cromos (${pct}%)</div>
               <div class="progress-bar"><div class="progress-fill" style="width:${pct}%"></div></div>
             </div>
             <div class="col-arrow">›</div>
@@ -536,19 +566,22 @@ function renderDashboard(){
   document.getElementById('dash-title').textContent=curName;
   const vals=Object.values(state);
   const owned=vals.filter(s=>s.o).length;
-  const pct=Math.round(owned/980*100);
+  const pct=Math.round(owned/TOTAL*100);
   document.getElementById('donut-pct').textContent=pct+'%';
   document.getElementById('donut-arc').setAttribute('stroke-dashoffset',314-(pct/100)*314);
   document.getElementById('stat-owned').textContent=owned;
-  document.getElementById('stat-missing').textContent=980-owned;
+  document.getElementById('stat-missing').textContent=TOTAL-owned;
   document.getElementById('stat-dupes').textContent=vals.filter(s=>s.d>0).length;
   let complete=0;
   TEAMS.forEach(t=>{if(Array.from({length:20},(_,i)=>`${t.code}${i+1}`).every(id=>state[id]?.o))complete++;});
   document.getElementById('stat-teams').textContent=complete+'/48';
   const fwcIds=Array.from({length:20},(_,i)=>`FWC${i+1}`);
   const fwcOwned=fwcIds.filter(id=>state[id]?.o).length;
+  const extraIds=EXTRA_PLAYERS.flatMap(p=>VARIANTS.map(v=>`X${p.code}${v}`));
+  const extraOwned=extraIds.filter(id=>state[id]?.o).length;
   document.getElementById('group-section').innerHTML=
     `<div class="group-block special-block"><div class="group-label">✦ Especiais (${fwcOwned}/20)</div><div class="teams-row"><div class="team-mini"><div class="team-mini-flag">✦</div><div class="team-mini-name">FWC 1–20</div><div class="team-mini-bar"><div class="team-mini-fill" style="width:${fwcOwned/20*100}%"></div></div></div></div></div>`
+    +`<div class="group-block" style="border-color:var(--amber)"><div class="group-label" style="color:var(--amber)">⭐ Extra (${extraOwned}/80)</div><div class="teams-row">${EXTRA_PLAYERS.map(p=>{const pIds=VARIANTS.map(v=>`X${p.code}${v}`);const pOwned=pIds.filter(id=>state[id]?.o).length;return `<div class="team-mini"><div class="team-mini-flag">${p.flag}</div><div class="team-mini-name">${p.name.split(' ')[0]}</div><div class="team-mini-bar"><div class="team-mini-fill" style="width:${pOwned/4*100}%;background:var(--amber)"></div></div></div>`;}).join('')}</div></div>`
     +GROUPS.map(g=>{
     const teams=TEAMS.filter(t=>t.group===g);
     return `<div class="group-block"><div class="group-label">Grupo ${g}</div><div class="teams-row">${
@@ -562,22 +595,23 @@ function renderDashboard(){
 }
 
 function renderBrowser(){
-  const tabs=[...GROUPS,'✦'];
+  const tabs=[...GROUPS,'✦','X'];
   document.getElementById('browser-tabs').innerHTML=tabs.map(g=>
-    `<button class="tab-btn${g===activeBG?' active':''}" onclick="setBG('${g}')">${g==='✦'?'Especiais':'Grupo '+g}</button>`
+    `<button class="tab-btn${g===activeBG?' active':''}" onclick="setBG('${g}')">${g==='✦'?'Especiais':g==='X'?'Extra':'Grupo '+g}</button>`
   ).join('');
   renderBrowserContent();
 }
 
 window.setBG=function(g){
   activeBG=g;expandedTeam=null;
-  document.querySelectorAll('.tab-btn').forEach((b,i)=>b.classList.toggle('active',[...GROUPS,'✦'][i]===g));
+  document.querySelectorAll('.tab-btn').forEach((b,i)=>b.classList.toggle('active',[...GROUPS,'✦','X'][i]===g));
   renderBrowserContent();
 };
 
 function renderBrowserContent(){
   const el=document.getElementById('browser-content');
   if(activeBG==='✦'){renderSpecial(el);return;}
+  if(activeBG==='X'){renderExtra(el);return;}
   el.innerHTML=TEAMS.filter(t=>t.group===activeBG).map(t=>{
     const ids=Array.from({length:20},(_,i)=>`${t.code}${i+1}`);
     const to=ids.filter(id=>state[id]?.o).length;
@@ -598,6 +632,21 @@ function renderSpecial(el){
   const fwcIds=Array.from({length:20},(_,i)=>`FWC${i+1}`);
   el.innerHTML=
     `<div class="special-section"><div class="special-title">✦ Especiais (${fwcIds.filter(id=>state[id]?.o).length}/20)</div><div class="special-grid">${fwcIds.map(id=>cellHtml(id)).join('')}</div></div>`;
+}
+
+function renderExtra(el){
+  el.innerHTML=EXTRA_PLAYERS.map(p=>{
+    const ids=VARIANTS.map(v=>`X${p.code}${v}`);
+    const owned=ids.filter(id=>state[id]?.o).length;
+    return `<div class="team-section">
+      <div class="team-header" style="cursor:default">
+        <div class="team-flag">${p.flag}</div>
+        <div class="team-name">${esc(p.name)}</div>
+        <div class="team-count${owned===4?' complete':''}">${owned}/4</div>
+      </div>
+      <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:3px;background:var(--bg2);border:1px solid var(--amber);border-top:none;border-radius:0 0 10px 10px;padding:8px">${ids.map(id=>cellHtml(id)).join('')}</div>
+    </div>`;
+  }).join('');
 }
 
 function cellHtml(id){
@@ -674,7 +723,7 @@ window.filterMissing=function(){
   const list=q2?missingCache.filter(s=>s.id.toLowerCase().includes(q2)||s.name.toLowerCase().includes(q2)):missingCache;
   const el=document.getElementById('missing-list');
   if(!list.length){
-    el.innerHTML=`<div class="empty-state"><div class="empty-icon">${missingCache.length?'🔍':'🎉'}</div><div class="empty-text">${missingCache.length?'Nenhum resultado':'Coleção completa!'}</div><div class="empty-sub">${missingCache.length?'Tenta outra pesquisa':'Tens todos os 980 cromos!'}</div></div>`;
+    el.innerHTML=`<div class="empty-state"><div class="empty-icon">${missingCache.length?'🔍':'🎉'}</div><div class="empty-text">${missingCache.length?'Nenhum resultado':'Coleção completa!'}</div><div class="empty-sub">${missingCache.length?'Tenta outra pesquisa':'Tens todos os 1060 cromos!'}</div></div>`;
     return;
   }
   el.innerHTML=groupByTeam(list).map(({teamName,teamFlag,items})=>
