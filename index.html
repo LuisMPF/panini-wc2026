@@ -85,6 +85,7 @@ input{font-family:'Barlow',sans-serif}
 .stat-label{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;margin-top:2px}
 .group-section{display:flex;flex-direction:column;gap:10px}
 .group-block{background:var(--bg2);border:1px solid var(--border);border-radius:10px;padding:12px}
+.group-block.special-block{border-color:var(--accent)}
 .group-label{font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:1px;margin-bottom:8px}
 .teams-row{display:grid;grid-template-columns:repeat(4,1fr);gap:6px}
 .team-mini{background:var(--bg3);border-radius:8px;padding:8px 4px;text-align:center}
@@ -546,7 +547,9 @@ function renderDashboard(){
   document.getElementById('stat-teams').textContent=complete+'/48';
   const fwcIds=Array.from({length:20},(_,i)=>`FWC${i+1}`);
   const fwcOwned=fwcIds.filter(id=>state[id]?.o).length;
-  document.getElementById('group-section').innerHTML=GROUPS.map(g=>{
+  document.getElementById('group-section').innerHTML=
+    `<div class="group-block special-block"><div class="group-label">✦ Especiais (${fwcOwned}/20)</div><div class="teams-row"><div class="team-mini"><div class="team-mini-flag">✦</div><div class="team-mini-name">FWC 1–20</div><div class="team-mini-bar"><div class="team-mini-fill" style="width:${fwcOwned/20*100}%"></div></div></div></div></div>`
+    +GROUPS.map(g=>{
     const teams=TEAMS.filter(t=>t.group===g);
     return `<div class="group-block"><div class="group-label">Grupo ${g}</div><div class="teams-row">${
       teams.map(t=>{
@@ -555,7 +558,7 @@ function renderDashboard(){
         return `<div class="team-mini"><div class="team-mini-flag">${t.flag}</div><div class="team-mini-name">${t.name.split(' ')[0]}</div><div class="team-mini-bar"><div class="team-mini-fill" style="width:${to/20*100}%"></div></div></div>`;
       }).join('')
     }</div></div>`;
-  }).join('')+`<div class="group-block"><div class="group-label">Especiais</div><div class="teams-row"><div class="team-mini"><div class="team-mini-flag">✦</div><div class="team-mini-name">FWC 1–20</div><div class="team-mini-bar"><div class="team-mini-fill" style="width:${fwcOwned/20*100}%"></div></div></div></div></div>`;
+  }).join('');
 }
 
 function renderBrowser(){
