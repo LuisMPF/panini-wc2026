@@ -206,6 +206,7 @@ input{font-family:'Barlow',sans-serif}
         <div class="form-group"><label class="form-label">Nome</label><input class="input" id="inp-name" type="text" placeholder="Ex: Luís, Sobrinho João..."/></div>
         <div class="form-group"><label class="form-label">Password</label><input class="input" id="inp-pass" type="password" placeholder="Escolhe uma password"/></div>
         <div class="form-group"><label class="form-label">Confirmar password</label><input class="input" id="inp-pass2" type="password" placeholder="Repete a password"/></div>
+        <div class="form-group"><label class="form-label">Código de convite</label><input class="input" id="inp-invite" type="password" placeholder="Código necessário para criar coleção"/></div>
         <div class="form-error hidden" id="create-error"></div>
         <button class="btn btn-primary" onclick="doCreateCollection()">Criar Coleção</button>
       </div>
@@ -307,6 +308,7 @@ const firebaseConfig={
 const app=initializeApp(firebaseConfig);
 const db=getFirestore(app);
 const COL='panini_wc2026';
+const INVITE_CODE='GonçaloMundial2026';
 
 const TEAMS=[
   {code:'MEX',name:'Mexico',group:'A',flag:'🇲🇽'},
@@ -506,19 +508,21 @@ window.doCreateCollection=async function(){
   const passEl=document.getElementById('inp-pass');
   const pass2El=document.getElementById('inp-pass2');
   const errEl=document.getElementById('create-error');
-  const name=nameEl.value.trim(),pass=passEl.value,pass2=pass2El.value;
+  const inviteEl=document.getElementById('inp-invite');
+  const name=nameEl.value.trim(),pass=passEl.value,pass2=pass2El.value,invite=inviteEl.value;
   errEl.classList.add('hidden');
   const showErr=msg=>{errEl.textContent=msg;errEl.classList.remove('hidden');};
   if(!name)return showErr('Introduz um nome para a coleção.');
   if(!pass)return showErr('Introduz uma password.');
   if(pass!==pass2)return showErr('As passwords não coincidem.');
+  if(invite!==INVITE_CODE)return showErr('Código de convite inválido.');
   const colId=slugify(name);
   if((await getDoc(doc(db,COL,colId))).exists())return showErr('Já existe uma coleção com esse nome.');
   const passwordHash=await sha256(pass);
   const initialStickers=Object.fromEntries(STICKERS.map(s=>[s.id,{o:false,d:0}]));
   await setDoc(doc(db,COL,colId),{name,passwordHash,createdAt:serverTimestamp(),updatedAt:serverTimestamp(),stickers:initialStickers});
   setAuth(colId);
-  nameEl.value='';passEl.value='';pass2El.value='';
+  nameEl.value='';passEl.value='';pass2El.value='';inviteEl.value='';
   showToast('✅ Coleção criada!');
   state=initialStickers;curId=colId;curName=name;
   document.getElementById('nav-col-name').textContent=name;
