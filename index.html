@@ -25,18 +25,21 @@ input{font-family:'Barlow',sans-serif}
 .top-nav{display:none;align-items:stretch;background:var(--bg2);border-bottom:1px solid var(--border);position:sticky;top:0;z-index:100;height:var(--nav-h)}
 .nav-brand{display:flex;align-items:center;padding:0 20px;gap:8px;border-right:1px solid var(--border)}
 .nav-brand-text{font-family:'Anton',sans-serif;font-size:18px;letter-spacing:2px;background:linear-gradient(90deg,#fff,var(--accent));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
-.nav-links{display:flex;align-items:stretch;flex:1}
+.nav-links{display:none;align-items:stretch;flex:1}
+.nav-links.visible{display:flex}
 .nav-btn{padding:0 16px;font-size:12px;font-weight:700;color:var(--muted);border-bottom:3px solid transparent;letter-spacing:1px;text-transform:uppercase;transition:all .2s}
 .nav-btn.active,.nav-btn:hover{color:var(--text);border-bottom-color:var(--accent)}
 .nav-collection{margin-left:auto;display:flex;align-items:center;padding:0 16px;gap:8px;font-size:13px;color:var(--muted)}
 .nav-collection strong{color:var(--accent)}
 .switch-btn{padding:6px 12px;border:1px solid var(--border);border-radius:6px;font-size:12px;color:var(--muted);transition:all .2s}
 .switch-btn:hover{border-color:var(--accent);color:var(--accent)}
-.bottom-nav{display:flex;position:fixed;bottom:0;left:0;right:0;background:var(--bg2);border-top:1px solid var(--border);height:var(--bottom-h);padding-bottom:env(safe-area-inset-bottom);z-index:100}
+.bottom-nav{display:none;position:fixed;bottom:0;left:0;right:0;background:var(--bg2);border-top:1px solid var(--border);height:calc(var(--bottom-h) + env(safe-area-inset-bottom));padding-bottom:env(safe-area-inset-bottom);z-index:100}
+.bottom-nav.visible{display:flex}
 .bnav-btn{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;color:var(--muted);font-size:10px;font-weight:600;letter-spacing:.5px;text-transform:uppercase;transition:color .2s}
 .bnav-btn.active{color:var(--accent)}
 .bnav-btn svg{width:22px;height:22px}
-#app{padding-bottom:var(--bottom-h)}
+#app{padding-bottom:0}
+#app.in-collection{padding-bottom:calc(var(--bottom-h) + env(safe-area-inset-bottom))}
 .view{display:none;padding:16px;max-width:920px;margin:0 auto}
 .view.active{display:block}
 .card{background:var(--bg2);border:1px solid var(--border);border-radius:12px;padding:16px}
@@ -168,8 +171,8 @@ input{font-family:'Barlow',sans-serif}
 .sticker-cell.foil.owned::after{content:'';position:absolute;inset:0;background:linear-gradient(135deg,transparent 25%,rgba(167,139,250,.4) 50%,transparent 75%);background-size:200% 200%;animation:shimmer 2s ease-in-out infinite;pointer-events:none}
 @media(min-width:768px){
   .top-nav{display:flex}
-  .bottom-nav{display:none}
-  #app{padding-bottom:0}
+  .bottom-nav{display:none!important}
+  #app.in-collection{padding-bottom:0}
   #toast{bottom:16px}
   .sticker-grid,.special-grid{grid-template-columns:repeat(10,1fr)}
   .stat-grid{grid-template-columns:repeat(4,1fr)}
@@ -181,7 +184,7 @@ input{font-family:'Barlow',sans-serif}
 
 <nav class="top-nav">
   <div class="nav-brand"><span style="font-size:20px">⚽</span><span class="nav-brand-text">PANINI WC2026</span></div>
-  <div class="nav-links">
+  <div class="nav-links" id="nav-links">
     <button class="nav-btn" id="nb-dashboard" onclick="navTo('dashboard')">Dashboard</button>
     <button class="nav-btn" id="nb-browser" onclick="navTo('browser')">Cromos</button>
     <button class="nav-btn" id="nb-missing" onclick="navTo('missing')">Em Falta</button>
@@ -265,7 +268,7 @@ input{font-family:'Barlow',sans-serif}
   </div>
 </div>
 
-<nav class="bottom-nav">
+<nav class="bottom-nav" id="bottom-nav">
   <button class="bnav-btn" id="bnav-dashboard" onclick="navTo('dashboard')">
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>
     Início
@@ -457,6 +460,12 @@ window.navTo=function(view){
   else if(view==='duplicates')renderDuplicates();
 };
 
+function setNavVisible(on){
+  document.getElementById('bottom-nav').classList.toggle('visible',on);
+  document.getElementById('nav-links').classList.toggle('visible',on);
+  document.getElementById('app').classList.toggle('in-collection',on);
+}
+
 window.switchCollection=function(){
   curId=null;curName=null;state={};expandedTeam=null;
   document.getElementById('nav-col-name').textContent='—';
@@ -466,6 +475,7 @@ window.switchCollection=function(){
     const b=document.getElementById('bnav-'+v);if(b)b.classList.remove('active');
     const nb=document.getElementById('nb-'+v);if(nb)nb.classList.remove('active');
   });
+  setNavVisible(false);
   loadCollections();
 };
 
@@ -530,6 +540,7 @@ window.doLogin=async function(colId,colName){
 async function enterCollection(colId,colName){
   curId=colId;curName=colName;
   document.getElementById('nav-col-name').textContent=colName;
+  setNavVisible(true);
   try{
     const snap=await getDoc(doc(db,COL,colId));
     state=snap.exists()?(snap.data().stickers||{}):{}
@@ -560,6 +571,7 @@ window.doCreateCollection=async function(){
   showToast('✅ Coleção criada!');
   state=initialStickers;curId=colId;curName=name;
   document.getElementById('nav-col-name').textContent=name;
+  setNavVisible(true);
   navTo('dashboard');
 };
 
@@ -666,7 +678,7 @@ function cellHtml(id){
   const cls=['sticker-cell',st.o?'owned':'',st.d>0?'has-dupes':'',s.foil?'foil':''].filter(Boolean).join(' ');
   const icon=st.o?'✓':(s.foil?'✦':'');
   const badge=st.d>0?`<div class="dupe-badge">+${st.d}</div>`:'';
-  return `<div class="${cls}" id="sc-${id}" onclick="tapSticker('${id}')" oncontextmenu="longTap(event,'${id}')" title="${esc(s.name)}">${badge}<div class="sticker-num">${id}</div><div class="sticker-icon">${icon}</div></div>`;
+  return `<div class="${cls}" id="sc-${id}" onclick="tapSticker('${id}')" ondblclick="longTap(event,'${id}')" oncontextmenu="longTap(event,'${id}')" title="${esc(s.name)}">${badge}<div class="sticker-num">${id}</div><div class="sticker-icon">${icon}</div></div>`;
 }
 
 window.goToTeam=function(g,code){
