@@ -602,14 +602,23 @@ window.openCollection=async function(colId,colName){
 window.doLogin=async function(colId,colName){
   const passEl=document.getElementById('auth-pass');
   if(!passEl||!passEl.value)return;
-  const hash=await sha256(passEl.value);
-  const snap=await getDoc(doc(db,COL,colId));
-  if(!snap.exists()||snap.data().passwordHash!==hash){
+  try{
+    const hash=await sha256(passEl.value);
+    const snap=await getDoc(doc(db,COL,colId));
+    if(!snap.exists()||snap.data().passwordHash!==hash){
+      document.getElementById('auth-error').classList.remove('hidden');
+      return;
+    }
+    setAuth(colId);closeModal();
+    curId=colId;curName=colName;
+    document.getElementById('nav-col-name').textContent=colName;
+    setNavVisible(true);
+    state=snap.data().stickers||{};
+    navTo('dashboard');
+  }catch(e){
+    console.error('Login error:',e);
     document.getElementById('auth-error').classList.remove('hidden');
-    return;
   }
-  setAuth(colId);closeModal();
-  await enterCollection(colId,colName);
 };
 
 async function enterCollection(colId,colName){
@@ -618,7 +627,7 @@ async function enterCollection(colId,colName){
   setNavVisible(true);
   try{
     const snap=await getDoc(doc(db,COL,colId));
-    state=snap.exists()?(snap.data().stickers||{}):{}
+    state=snap.exists()?(snap.data().stickers||{}):{};
   }catch(e){state={};}
   navTo('dashboard');
 }
