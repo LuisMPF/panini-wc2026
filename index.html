@@ -191,6 +191,12 @@ input{font-family:'Barlow',sans-serif}
 .spinner{width:20px;height:20px;border:2px solid var(--border);border-top-color:var(--accent);border-radius:50%;animation:spin .8s linear infinite}
 @keyframes shimmer{0%,100%{background-position:0% 50%}50%{background-position:100% 50%}}
 .sticker-cell.foil.owned::after{content:'';position:absolute;inset:0;background:linear-gradient(135deg,transparent 25%,rgba(167,139,250,.4) 50%,transparent 75%);background-size:200% 200%;animation:shimmer 2s ease-in-out infinite;pointer-events:none}
+.sticker-cell.vb{border-color:#b87333!important;background:rgba(184,115,51,.12)!important}
+.sticker-cell.vb.owned{background:rgba(184,115,51,.28)!important}
+.sticker-cell.vp{border-color:#94a3b8!important;background:rgba(148,163,184,.1)!important}
+.sticker-cell.vp.owned{background:rgba(148,163,184,.28)!important}
+.sticker-cell.vo{border-color:var(--amber)!important;background:var(--amber-dim)!important}
+.sticker-cell.vo.owned{background:rgba(245,158,11,.3)!important}
 @media(min-width:768px){
   .top-nav{display:flex}
   .bottom-nav{display:none!important}
@@ -627,7 +633,7 @@ async function enterCollection(colId,colName){
   setNavVisible(true);
   try{
     const snap=await getDoc(doc(db,COL,colId));
-    state=snap.exists()?(snap.data().stickers||{}):{};
+    state=snap.exists()?(snap.data().stickers||{}):{}
   }catch(e){state={};}
   navTo('dashboard');
 }
@@ -759,10 +765,13 @@ function renderExtra(el){
 function cellHtml(id){
   const s=BY_ID[id];
   const st=state[id]||{o:false,d:0};
-  const cls=['sticker-cell',st.o?'owned':'',st.d>0?'has-dupes':'',s.foil?'foil':''].filter(Boolean).join(' ');
+  const isExtra=s.section==='EXTRA';
+  const vClass=isExtra?'v'+id.slice(-1).toLowerCase():'';
+  const cls=['sticker-cell',st.o?'owned':'',st.d>0?'has-dupes':'',s.foil?'foil':'',vClass].filter(Boolean).join(' ');
   const icon=st.o?'✓':(s.foil?'✦':'');
   const badge=st.d>0?`<div class="dupe-badge">+${st.d}</div>`:'';
-  return `<div class="${cls}" id="sc-${id}" onclick="tapSticker('${id}')" ondblclick="longTap(event,'${id}')" oncontextmenu="longTap(event,'${id}')" title="${esc(s.name)}">${badge}<div class="sticker-num">${id}</div><div class="sticker-icon">${icon}</div></div>`;
+  const label=isExtra?s.shortName:id;
+  return `<div class="${cls}" id="sc-${id}" onclick="tapSticker('${id}')" ondblclick="longTap(event,'${id}')" oncontextmenu="longTap(event,'${id}')" title="${esc(s.name)}">${badge}<div class="sticker-num">${label}</div><div class="sticker-icon">${icon}</div></div>`;
 }
 
 window.goToTeam=function(g,code){
@@ -813,10 +822,13 @@ window.adjustDupe=function(id,delta){
 function updateCell(id){
   const cell=document.getElementById('sc-'+id);if(!cell)return;
   const s=BY_ID[id];const st=state[id]||{o:false,d:0};
-  cell.className=['sticker-cell',st.o?'owned':'',st.d>0?'has-dupes':'',s.foil?'foil':''].filter(Boolean).join(' ');
+  const isExtra=s.section==='EXTRA';
+  const vClass=isExtra?'v'+id.slice(-1).toLowerCase():'';
+  cell.className=['sticker-cell',st.o?'owned':'',st.d>0?'has-dupes':'',s.foil?'foil':'',vClass].filter(Boolean).join(' ');
   const icon=st.o?'✓':(s.foil?'✦':'');
   const badge=st.d>0?`<div class="dupe-badge">+${st.d}</div>`:'';
-  cell.innerHTML=badge+`<div class="sticker-num">${id}</div><div class="sticker-icon">${icon}</div>`;
+  const label=isExtra?s.shortName:id;
+  cell.innerHTML=badge+`<div class="sticker-num">${label}</div><div class="sticker-icon">${icon}</div>`;
 }
 
 async function saveSticker(id){
