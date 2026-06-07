@@ -379,7 +379,7 @@ const TEAMS=[
   {code:'BRA',name:'Brazil',group:'C',flag:'🇧🇷'},
   {code:'MAR',name:'Morocco',group:'C',flag:'🇲🇦'},
   {code:'HAI',name:'Haiti',group:'C',flag:'🇭🇹'},
-  {code:'SCO',name:'Scotland',group:'C',flag:'🏴‍'},
+  {code:'SCO',name:'Scotland',group:'C',flag:'🏴󠁧󠁢󠁳󠁣󠁴󠁿'},
   {code:'USA',name:'United States',group:'D',flag:'🇺🇸'},
   {code:'PAR',name:'Paraguay',group:'D',flag:'🇵🇾'},
   {code:'AUS',name:'Australia',group:'D',flag:'🇦🇺'},
@@ -412,7 +412,7 @@ const TEAMS=[
   {code:'COD',name:'DR Congo',group:'K',flag:'🇨🇩'},
   {code:'UZB',name:'Uzbekistan',group:'K',flag:'🇺🇿'},
   {code:'COL',name:'Colombia',group:'K',flag:'🇨🇴'},
-  {code:'ENG',name:'England',group:'L',flag:'🏴‍'},
+  {code:'ENG',name:'England',group:'L',flag:'🏴󠁧󠁢󠁥󠁮󠁧󠁿'},
   {code:'CRO',name:'Croatia',group:'L',flag:'🇭🇷'},
   {code:'GHA',name:'Ghana',group:'L',flag:'🇬🇭'},
   {code:'PAN',name:'Panama',group:'L',flag:'🇵🇦'},
@@ -427,7 +427,7 @@ const EXTRA_PLAYERS=[
   {code:'CRO',name:'Luka Modrić',flag:'🇭🇷'},
   {code:'ECU',name:'Moisés Caicedo',flag:'🇪🇨'},
   {code:'EGY',name:'Mohamed Salah',flag:'🇪🇬'},
-  {code:'ENG',name:'Jude Bellingham',flag:'🏴‍'},
+  {code:'ENG',name:'Jude Bellingham',flag:'🏴󠁧󠁢󠁥󠁮󠁧󠁿'},
   {code:'FRA',name:'Kylian Mbappé',flag:'🇫🇷'},
   {code:'GER',name:'Florian Wirtz',flag:'🇩🇪'},
   {code:'KOR',name:'Heungmin Son',flag:'🇰🇷'},
@@ -551,9 +551,7 @@ window.renderTrades=async function(){
       return {o,canGive,canRecv};
     }).sort((a,b)=>(b.canGive.length+b.canRecv.length)-(a.canGive.length+a.canRecv.length));
     el.innerHTML=cards.map(({o,canGive,canRecv})=>{
-      const giveChips=canGive.map(s=>{
-        return `<span class="trade-chip give" title="${esc(s.name)}">${s.id}</span>`;
-      }).join('');
+      const giveChips=canGive.map(s=>`<span class="trade-chip give" title="${esc(s.name)}">${s.id}</span>`).join('');
       const recvChips=canRecv.map(s=>`<span class="trade-chip recv" title="${esc(s.name)}">${s.id}</span>`).join('');
       const giveSection=canGive.length
         ?`<div class="trade-section"><div class="trade-section-label give">▲ Posso dar (${canGive.length})</div><div class="trade-chips">${giveChips}</div></div>`
@@ -722,7 +720,7 @@ async function enterCollection(colId,colName){
   setNavVisible(true);
   try{
     const snap=await getDoc(doc(db,COL,colId));
-    state=snap.exists()?(snap.data().stickers||{})=>{};
+    state=snap.exists()?(snap.data().stickers||{}):{};
   }catch(e){state={};}
   navTo('dashboard');
 }
