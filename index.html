@@ -161,9 +161,11 @@ input{font-family:'Barlow',sans-serif}
 .trade-section-label.give{color:var(--amber)}
 .trade-section-label.recv{color:var(--accent)}
 .trade-chips{display:flex;flex-wrap:wrap;gap:3px}
-.trade-chip{font-size:10px;font-weight:700;font-family:monospace;padding:2px 6px;border-radius:4px;background:var(--bg3);border:1px solid var(--border)}
+.trade-chip{font-size:10px;font-weight:700;font-family:monospace;padding:2px 6px;border-radius:4px;background:var(--bg3);border:1px solid var(--border);cursor:pointer;transition:background .15s}
 .trade-chip.give{border-color:var(--amber);color:var(--amber)}
+.trade-chip.give:hover{background:var(--amber-dim)}
 .trade-chip.recv{border-color:var(--accent);color:var(--accent)}
+.trade-chip.recv:hover{background:var(--accent-dim)}
 .trade-row{display:flex;align-items:center;gap:8px;padding:6px 0;border-bottom:1px solid var(--border)}
 .trade-row:last-child{border-bottom:none}
 .trade-row-name{flex:1;font-size:13px;color:var(--text);min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
@@ -273,6 +275,7 @@ input{font-family:'Barlow',sans-serif}
     <div class="stats-bar">
       <span>Em falta:</span><span class="stats-count" id="missing-count">—</span>
       <span style="color:var(--muted);font-size:12px">/ 980 cromos</span>
+      <button class="export-btn" onclick="exportMissingList()">📋 Exportar lista</button>
     </div>
     <div class="search-bar"><input class="search-input" id="missing-search" type="text" placeholder="Pesquisar por ID ou nome..." oninput="filterMissing()"/></div>
     <div id="missing-list"></div>
@@ -462,6 +465,7 @@ const TOTAL=STICKERS.length;
 const TOTAL_MAIN=STICKERS.filter(s=>s.section!=='EXTRA').length;
 
 let curId=null,curName=null,state={},activeBG='A',expandedTeam=null;
+let tradeQueue=[];
 const saveTimers={};
 let missingCache=[];
 
@@ -528,6 +532,7 @@ window.switchCollection=function(){
 };
 
 window.renderTrades=async function(){
+  tradeQueue=[];
   const el=document.getElementById('trades-list');
   el.innerHTML='<div class="loading"><div class="spinner"></div> A carregar trocas...</div>';
   try{
@@ -544,8 +549,14 @@ window.renderTrades=async function(){
       return {o,canGive,canRecv};
     }).sort((a,b)=>(b.canGive.length+b.canRecv.length)-(a.canGive.length+a.canRecv.length));
     el.innerHTML=cards.map(({o,canGive,canRecv})=>{
-      const giveChips=canGive.map(s=>`<span class="trade-chip give" title="${esc(s.name)}">${s.id}</span>`).join('');
-      const recvChips=canRecv.map(s=>`<span class="trade-chip recv" title="${esc(s.name)}">${s.id}</span>`).join('');
+      const giveChips=canGive.map(s=>{
+        const idx=tradeQueue.push({type:'give',otherId:o.id,otherName:o.name,stickerId:s.id,otherStickerState:{...(o.stickers?.[s.id]||{o:false,d:0})}})-1;
+        return `<span class="trade-chip give" onclick="openTradeConfirm(${idx})" title="${esc(s.name)}">${s.id}</span>`;
+      }).join('');
+      const recvChips=canRecv.map(s=>{
+        const idx=tradeQueue.push({type:'recv',otherId:o.id,otherName:o.name,stickerId:s.id,otherStickerState:{...(o.stickers?.[s.id]||{o:true,d:1})}})-1;
+        return `<span class="trade-chip recv" onclick="openTradeConfirm(${idx})" title="${esc(s.name)}">${s.id}</span>`;
+      }).join('');
       const giveSection=canGive.length
         ?`<div class="trade-section"><div class="trade-section-label give">▲ Posso dar (${canGive.length})</div><div class="trade-chips">${giveChips}</div></div>`
         :`<div class="trade-section"><div class="trade-section-label give" style="opacity:.45">▲ Nada para dar</div></div>`;
@@ -563,6 +574,58 @@ window.renderTrades=async function(){
     }).join('');
   }catch(e){
     el.innerHTML='<div style="color:var(--danger);padding:16px">Erro ao carregar trocas.</div>';
+  }
+};
+
+window.openTradeConfirm=function(idx){
+  const t=tradeQueue[idx];
+  const s=BY_ID[t.stickerId];
+  const isGive=t.type==='give';
+  const action=isGive
+    ?`Dar <strong>${t.stickerId}</strong> a <strong>${esc(t.otherName)}</strong>`
+    :`Receber <strong>${t.stickerId}</strong> de <strong>${esc(t.otherName)}</strong>`;
+  const e1=isGive
+    ?`Remove 1 repetido de <strong>${t.stickerId}</strong> na tua coleção`
+    :`Remove 1 repetido de <strong>${t.stickerId}</strong> em <strong>${esc(t.otherName)}</strong>`;
+  const e2=isGive
+    ?`Marca <strong>${t.stickerId}</strong> como obtido em <strong>${esc(t.otherName)}</strong>`
+    :`Marca <strong>${t.stickerId}</strong> como obtido na tua coleção`;
+  openModal('Confirmar Troca',s.name,
+    `<div style="font-size:13px;margin-bottom:12px;line-height:1.5">${action}</div>
+    <div style="background:var(--bg3);border-radius:8px;padding:10px 12px;font-size:12px;color:var(--muted);line-height:1.8">
+      <div>• ${e1}</div><div>• ${e2}</div>
+    </div>
+    <div class="modal-actions">
+      <button class="btn btn-ghost" onclick="closeModal()">Cancelar</button>
+      <button class="btn btn-primary" onclick="executeTrade(${idx})">Confirmar</button>
+    </div>`
+  );
+};
+
+window.executeTrade=async function(idx){
+  const t=tradeQueue[idx];
+  closeModal();
+  try{
+    if(t.type==='give'){
+      const mySt=state[t.stickerId]||{o:true,d:0};
+      mySt.d=Math.max(0,(mySt.d||0)-1);
+      state[t.stickerId]=mySt;
+      await updateDoc(doc(db,COL,curId),{['stickers.'+t.stickerId]:mySt,updatedAt:serverTimestamp()});
+      const theirSt={...t.otherStickerState,o:true};
+      await updateDoc(doc(db,COL,t.otherId),{['stickers.'+t.stickerId]:theirSt,updatedAt:serverTimestamp()});
+    }else{
+      const mySt=state[t.stickerId]||{o:false,d:0};
+      mySt.o=true;
+      state[t.stickerId]=mySt;
+      await updateDoc(doc(db,COL,curId),{['stickers.'+t.stickerId]:mySt,updatedAt:serverTimestamp()});
+      const theirSt={...t.otherStickerState,d:Math.max(0,(t.otherStickerState.d||0)-1)};
+      await updateDoc(doc(db,COL,t.otherId),{['stickers.'+t.stickerId]:theirSt,updatedAt:serverTimestamp()});
+    }
+    showToast('✅ Troca realizada!');
+    renderTrades();
+  }catch(e){
+    console.error(e);
+    showToast('❌ Erro ao executar troca');
   }
 };
 
@@ -974,6 +1037,20 @@ window.exportTradingList=function(){
   const a=document.createElement('a');
   a.href=URL.createObjectURL(new Blob([lines.join('\n')],{type:'text/plain'}));
   a.download='repetidos-panini-wc2026.txt';a.click();
+};
+
+window.exportMissingList=function(){
+  const missing=STICKERS.filter(s=>s.section!=='EXTRA'&&!state[s.id]?.o);
+  if(!missing.length){showToast('🎉 Não tens cromos em falta!');return;}
+  const lines=['Panini FIFA World Cup 2026™ — Cromos em Falta','='.repeat(44),'',`Total em falta: ${missing.length} / ${TOTAL_MAIN}`,''];
+  groupByTeam(missing).forEach(({teamName,items})=>{
+    lines.push(teamName+':');
+    items.forEach(s=>lines.push('  '+s.id+' — '+s.shortName));
+    lines.push('');
+  });
+  const a=document.createElement('a');
+  a.href=URL.createObjectURL(new Blob([lines.join('\n')],{type:'text/plain'}));
+  a.download='em-falta-panini-wc2026.txt';a.click();
 };
 
 function groupByTeam(stickers){
