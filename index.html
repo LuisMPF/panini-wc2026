@@ -737,7 +737,8 @@ window.openCollection=async function(colId,colName){
   openModal('🔐 '+colName,'Introduz a password para aceder à coleção.',
     `<div class="form-group" style="margin-bottom:4px">
       <label class="form-label">Password</label>
-      <input class="input" id="auth-pass" type="password" placeholder="Password" autocomplete="off"
+      <input class="input" id="auth-pass" type="text" placeholder="Password" autocomplete="off"
+        style="-webkit-text-security:disc;text-security:disc"
         onkeydown="if(event.key==='Enter')doLogin(${q(colId)},${q(colName)})"/>
     </div>
     <div class="form-error hidden" id="auth-error">Password incorreta.</div>
