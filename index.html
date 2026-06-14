@@ -261,6 +261,10 @@ input{font-family:'Barlow',sans-serif}
         <div class="stat-card"><div class="stat-value v-dupes" id="stat-dupes">0</div><div class="stat-label">Repetidos</div></div>
         <div class="stat-card"><div class="stat-value v-teams" id="stat-teams">0/48</div><div class="stat-label">Equipas Completas</div></div>
       </div>
+      <div style="display:flex;gap:8px;margin-top:10px">
+        <button class="export-btn" style="flex:1;text-align:center" onclick="exportMissingList()">📋 Exportar Em Falta</button>
+        <button class="export-btn" style="flex:1;text-align:center" onclick="exportTradingList()">📋 Exportar Repetidos</button>
+      </div>
     </div>
     <div class="section-title">PROGRESSO POR GRUPO</div>
     <div class="group-section" id="group-section"></div>
