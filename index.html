@@ -236,9 +236,9 @@ input{font-family:'Barlow',sans-serif}
       <div class="create-form-title">✚ Nova Coleção</div>
       <div class="create-fields">
         <div class="form-group"><label class="form-label">Nome</label><input class="input" id="inp-name" type="text" placeholder="Ex: Luís, Sobrinho João..."/></div>
-        <div class="form-group"><label class="form-label">Password</label><input class="input" id="inp-pass" type="password" placeholder="Escolhe uma password"/></div>
-        <div class="form-group"><label class="form-label">Confirmar password</label><input class="input" id="inp-pass2" type="password" placeholder="Repete a password"/></div>
-        <div class="form-group"><label class="form-label">Código de convite</label><input class="input" id="inp-invite" type="password" placeholder="Código necessário para criar coleção"/></div>
+        <div class="form-group"><label class="form-label">Password</label><input class="input" id="inp-pass" type="password" placeholder="Escolhe uma password" autocomplete="new-password"/></div>
+        <div class="form-group"><label class="form-label">Confirmar password</label><input class="input" id="inp-pass2" type="password" placeholder="Repete a password" autocomplete="new-password"/></div>
+        <div class="form-group"><label class="form-label">Código de convite</label><input class="input" id="inp-invite" type="password" placeholder="Código necessário para criar coleção" autocomplete="off"/></div>
         <div class="form-error hidden" id="create-error"></div>
         <button class="btn btn-primary" onclick="doCreateCollection()">Criar Coleção</button>
       </div>
@@ -737,7 +737,7 @@ window.openCollection=async function(colId,colName){
   openModal('🔐 '+colName,'Introduz a password para aceder à coleção.',
     `<div class="form-group" style="margin-bottom:4px">
       <label class="form-label">Password</label>
-      <input class="input" id="auth-pass" type="password" placeholder="Password"
+      <input class="input" id="auth-pass" type="password" placeholder="Password" autocomplete="off"
         onkeydown="if(event.key==='Enter')doLogin(${q(colId)},${q(colName)})"/>
     </div>
     <div class="form-error hidden" id="auth-error">Password incorreta.</div>
