@@ -449,7 +449,11 @@ function buildStickers(){
    'Host Country: Canada','Host Country: Mexico','Host Country: United States','Host Cities',
    'Uruguay 1930','Italy 1934','Italy 1938','Uruguay 1950','West Germany 1954',
    'Brazil 1958','Brazil 1962','England 1966','Brazil 1970','West Germany 1974','Argentina 1978'
-  ].forEach((name,i)=>s.push({id:`FWC${i+1}`,section:'FWC',group:'special',teamCode:'FWC',teamName:'Especiais',teamFlag:'✦',name,shortName:name,foil:i<9,num:i+1}));
+  ].forEach((name,i)=>{
+    const entry={id:`FWC${i+1}`,section:'FWC',group:'special',teamCode:'FWC',teamName:'Especiais',teamFlag:'✦',name,shortName:name,foil:i<9,num:i+1};
+    if(i===19)entry.displayId='FWC00';
+    s.push(entry);
+  });
   TEAMS.forEach(t=>{
     for(let n=1;n<=20;n++){
       const sn=n===1?'Escudo':n===2?'Equipa':`Jogador ${n-2}`;
@@ -555,11 +559,11 @@ window.renderTrades=async function(){
     el.innerHTML=cards.map(({o,canGive,canRecv})=>{
       const giveChips=canGive.map(s=>{
         const idx=tradeQueue.push({type:'give',otherId:o.id,otherName:o.name,stickerId:s.id,otherStickerState:{...(o.stickers?.[s.id]||{o:false,d:0})}})-1;
-        return `<span class="trade-chip give" onclick="openTradeConfirm(${idx})" title="${esc(s.name)}">${s.id}</span>`;
+        return `<span class="trade-chip give" onclick="openTradeConfirm(${idx})" title="${esc(s.name)}">${s.displayId||s.id}</span>`;
       }).join('');
       const recvChips=canRecv.map(s=>{
         const idx=tradeQueue.push({type:'recv',otherId:o.id,otherName:o.name,stickerId:s.id,otherStickerState:{...(o.stickers?.[s.id]||{o:true,d:1})}})-1;
-        return `<span class="trade-chip recv" onclick="openTradeConfirm(${idx})" title="${esc(s.name)}">${s.id}</span>`;
+        return `<span class="trade-chip recv" onclick="openTradeConfirm(${idx})" title="${esc(s.name)}">${s.displayId||s.id}</span>`;
       }).join('');
       const giveSection=canGive.length
         ?`<div class="trade-section"><div class="trade-section-label give">▲ Posso dar (${canGive.length})</div><div class="trade-chips">${giveChips}</div></div>`
@@ -585,15 +589,16 @@ window.openTradeConfirm=function(idx){
   const t=tradeQueue[idx];
   const s=BY_ID[t.stickerId];
   const isGive=t.type==='give';
+  const dispId=s.displayId||t.stickerId;
   const action=isGive
-    ?`Dar <strong>${t.stickerId}</strong> a <strong>${esc(t.otherName)}</strong>`
-    :`Receber <strong>${t.stickerId}</strong> de <strong>${esc(t.otherName)}</strong>`;
+    ?`Dar <strong>${dispId}</strong> a <strong>${esc(t.otherName)}</strong>`
+    :`Receber <strong>${dispId}</strong> de <strong>${esc(t.otherName)}</strong>`;
   const e1=isGive
-    ?`Remove 1 repetido de <strong>${t.stickerId}</strong> na tua coleção`
-    :`Remove 1 repetido de <strong>${t.stickerId}</strong> em <strong>${esc(t.otherName)}</strong>`;
+    ?`Remove 1 repetido de <strong>${dispId}</strong> na tua coleção`
+    :`Remove 1 repetido de <strong>${dispId}</strong> em <strong>${esc(t.otherName)}</strong>`;
   const e2=isGive
-    ?`Marca <strong>${t.stickerId}</strong> como obtido em <strong>${esc(t.otherName)}</strong>`
-    :`Marca <strong>${t.stickerId}</strong> como obtido na tua coleção`;
+    ?`Marca <strong>${dispId}</strong> como obtido em <strong>${esc(t.otherName)}</strong>`
+    :`Marca <strong>${dispId}</strong> como obtido na tua coleção`;
   openModal('Confirmar Troca',s.name,
     `<div style="font-size:13px;margin-bottom:12px;line-height:1.5">${action}</div>
     <div style="background:var(--bg3);border-radius:8px;padding:10px 12px;font-size:12px;color:var(--muted);line-height:1.8">
@@ -683,7 +688,7 @@ window.renderStats=async function(){
         <div style="font-size:11px;color:var(--muted);margin-bottom:10px">${nobody.length} cromo${nobody.length!==1?'s':''} que nenhuma coleção tem</div>
         ${groupByTeam(nobody).map(({teamName,teamFlag,items})=>`<div style="margin-bottom:10px">
           <div style="display:flex;align-items:center;gap:6px;margin-bottom:5px;font-size:13px;font-weight:700"><span>${teamFlag}</span> ${esc(teamName)}</div>
-          <div style="display:flex;flex-wrap:wrap;gap:3px">${items.map(s=>`<span style="font-size:10px;font-family:monospace;padding:2px 7px;border-radius:4px;background:var(--bg3);border:1px solid ${state[s.id]?.o?'var(--accent)':'var(--border)'};color:${state[s.id]?.o?'var(--accent)':'var(--muted)'}" title="${esc(s.name)}">${s.id}</span>`).join('')}</div>
+          <div style="display:flex;flex-wrap:wrap;gap:3px">${items.map(s=>`<span style="font-size:10px;font-family:monospace;padding:2px 7px;border-radius:4px;background:var(--bg3);border:1px solid ${state[s.id]?.o?'var(--accent)':'var(--border)'};color:${state[s.id]?.o?'var(--accent)':'var(--muted)'}" title="${esc(s.name)}">${s.displayId||s.id}</span>`).join('')}</div>
         </div>`).join('')}
       </div>`;
     }else{
@@ -693,7 +698,7 @@ window.renderStats=async function(){
         <div style="font-size:11px;color:var(--muted);margin-bottom:10px">Os 30 cromos com menos colecionadores</div>
         ${groupByTeam(rarest).map(({teamName,teamFlag,items})=>`<div style="margin-bottom:10px">
           <div style="display:flex;align-items:center;gap:6px;margin-bottom:5px;font-size:13px;font-weight:700"><span>${teamFlag}</span> ${esc(teamName)}</div>
-          <div style="display:flex;flex-wrap:wrap;gap:3px">${items.map(s=>`<span style="font-size:10px;font-family:monospace;padding:2px 7px;border-radius:4px;background:var(--bg3);border:1px solid ${state[s.id]?.o?'var(--accent)':'var(--border)'};color:${state[s.id]?.o?'var(--accent)':'var(--muted)'}" title="${esc(s.name)} (${ownerCnt[s.id]}/${n})">${s.id}</span>`).join('')}</div>
+          <div style="display:flex;flex-wrap:wrap;gap:3px">${items.map(s=>`<span style="font-size:10px;font-family:monospace;padding:2px 7px;border-radius:4px;background:var(--bg3);border:1px solid ${state[s.id]?.o?'var(--accent)':'var(--border)'};color:${state[s.id]?.o?'var(--accent)':'var(--muted)'}" title="${esc(s.name)} (${ownerCnt[s.id]}/${n})">${s.displayId||s.id}</span>`).join('')}</div>
         </div>`).join('')}
       </div>`;
     }
@@ -916,7 +921,7 @@ function cellHtml(id){
   const cls=['sticker-cell',st.o?'owned':'',st.d>0?'has-dupes':'',s.foil?'foil':'',vClass].filter(Boolean).join(' ');
   const icon=st.o?'✓':(s.foil?'✦':'');
   const badge=st.d>0?`<div class="dupe-badge">+${st.d}</div>`:'';
-  const label=isExtra?s.shortName:id;
+  const label=isExtra?s.shortName:(s.displayId||id);
   return `<div class="${cls}" id="sc-${id}" onclick="tapSticker('${id}')" ondblclick="longTap(event,'${id}')" oncontextmenu="longTap(event,'${id}')" title="${esc(s.name)}">${badge}<div class="sticker-num">${label}</div><div class="sticker-icon">${icon}</div></div>`;
 }
 
@@ -948,7 +953,7 @@ window.longTap=function(e,id){
 function openDupeModal(id){
   const s=BY_ID[id];
   const st=state[id]||{o:false,d:0};
-  openModal(id,s.name,
+  openModal(s.displayId||id,s.name,
     `<div class="modal-counter">
     <button class="counter-btn" onclick="adjustDupe('${id}',-1)">−</button>
     <div class="counter-val" id="mc-val">${st.d}</div>
@@ -973,7 +978,7 @@ function updateCell(id){
   cell.className=['sticker-cell',st.o?'owned':'',st.d>0?'has-dupes':'',s.foil?'foil':'',vClass].filter(Boolean).join(' ');
   const icon=st.o?'✓':(s.foil?'✦':'');
   const badge=st.d>0?`<div class="dupe-badge">+${st.d}</div>`:'';
-  const label=isExtra?s.shortName:id;
+  const label=isExtra?s.shortName:(s.displayId||id);
   cell.innerHTML=badge+`<div class="sticker-num">${label}</div><div class="sticker-icon">${icon}</div>`;
 }
 
@@ -994,7 +999,7 @@ function renderMissing(){
 
 window.filterMissing=function(){
   const q2=(document.getElementById('missing-search').value||'').toLowerCase();
-  const list=q2?missingCache.filter(s=>s.id.toLowerCase().includes(q2)||s.name.toLowerCase().includes(q2)):missingCache;
+  const list=q2?missingCache.filter(s=>s.id.toLowerCase().includes(q2)||(s.displayId||'').toLowerCase().includes(q2)||s.name.toLowerCase().includes(q2)):missingCache;
   const el=document.getElementById('missing-list');
   if(!list.length){
     el.innerHTML=`<div class="empty-state"><div class="empty-icon">${missingCache.length?'🔍':'🎉'}</div><div class="empty-text">${missingCache.length?'Nenhum resultado':'Coleção completa!'}</div><div class="empty-sub">${missingCache.length?'Tenta outra pesquisa':`Tens todos os ${TOTAL_MAIN} cromos!`}</div></div>`;
@@ -1002,7 +1007,7 @@ window.filterMissing=function(){
   }
   el.innerHTML=groupByTeam(list).map(({teamName,teamFlag,items})=>
     `<div class="list-group"><div class="list-group-header"><span class="lg-flag">${teamFlag}</span><span class="lg-name">${esc(teamName)}</span><span class="lg-count">${items.length} em falta</span></div>`+
-    items.map(s=>`<div class="list-item"><span class="li-id">${s.id}</span><span class="li-name">${esc(s.shortName)}</span>${s.foil?'<span class="li-foil">✦ Foil</span>':''}<button class="li-btn" onclick="markOwned('${s.id}')">✓ Tenho</button></div>`).join('')+'</div>'
+    items.map(s=>`<div class="list-item"><span class="li-id">${s.displayId||s.id}</span><span class="li-name">${esc(s.shortName)}</span>${s.foil?'<span class="li-foil">✦ Foil</span>':''}<button class="li-btn" onclick="markOwned('${s.id}')">✓ Tenho</button></div>`).join('')+'</div>'
   ).join('');
 };
 
@@ -1021,7 +1026,7 @@ function renderDuplicates(){
   }
   el.innerHTML=groupByTeam(dupes).map(({teamName,teamFlag,items})=>
     `<div class="list-group"><div class="list-group-header"><span class="lg-flag">${teamFlag}</span><span class="lg-name">${esc(teamName)}</span></div>`+
-    items.map(s=>`<div class="list-item"><span class="li-id">${s.id}</span>${s.foil?'<span class="li-foil">✦ Foil</span>':''}<div class="dupe-controls"><button class="dupe-btn" onclick="changeDupe('${s.id}',-1)">−</button><span class="dupe-count">${state[s.id]?.d||0}</span><button class="dupe-btn" onclick="changeDupe('${s.id}',1)">+</button></div></div>`).join('')+'</div>'
+    items.map(s=>`<div class="list-item"><span class="li-id">${s.displayId||s.id}</span>${s.foil?'<span class="li-foil">✦ Foil</span>':''}<div class="dupe-controls"><button class="dupe-btn" onclick="changeDupe('${s.id}',-1)">−</button><span class="dupe-count">${state[s.id]?.d||0}</span><button class="dupe-btn" onclick="changeDupe('${s.id}',1)">+</button></div></div>`).join('')+'</div>'
   ).join('');
 }
 
@@ -1036,7 +1041,7 @@ window.exportTradingList=function(){
   const lines=['Panini FIFA World Cup 2026™ — Repetidos para troca','='.repeat(44),''];
   groupByTeam(dupes).forEach(({teamName,items})=>{
     lines.push(teamName+':');
-    items.forEach(s=>lines.push('  '+s.id+' — '+s.shortName+' (x'+(state[s.id]?.d)+')'));
+    items.forEach(s=>lines.push('  '+(s.displayId||s.id)+' — '+s.shortName+' (x'+(state[s.id]?.d)+')'));
     lines.push('');
   });
   const a=document.createElement('a');
@@ -1050,7 +1055,7 @@ window.exportMissingList=function(){
   const lines=['Panini FIFA World Cup 2026™ — Cromos em Falta','='.repeat(44),'',`Total em falta: ${missing.length} / ${TOTAL_MAIN}`,''];
   groupByTeam(missing).forEach(({teamName,items})=>{
     lines.push(teamName+':');
-    items.forEach(s=>lines.push('  '+s.id+' — '+s.shortName));
+    items.forEach(s=>lines.push('  '+(s.displayId||s.id)+' — '+s.shortName));
     lines.push('');
   });
   const a=document.createElement('a');
