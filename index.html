@@ -589,6 +589,7 @@ window.renderTrades=async function(){
           <div class="trade-col-name">${esc(o.name)}</div>
           ${canGive.length?`<span class="trade-pill give">${canGive.length} para dar</span>`:''}
           ${canRecv.length?`<span class="trade-pill recv">${canRecv.length} para receber</span>`:''}
+          ${(canGive.length||canRecv.length)?`<button class="export-btn" style="margin-left:4px;padding:5px 9px;font-size:11px" onclick="exportTradeWith(${q(o.id)},${q(o.name)})">📋</button>`:''}
         </div>
         ${giveSection}${recvSection}
       </div>`;
@@ -649,6 +650,26 @@ window.executeTrade=async function(idx){
     console.error(e);
     showToast('❌ Erro ao executar troca');
   }
+};
+
+window.exportTradeWith=function(otherId,otherName){
+  const give=tradeQueue.filter(t=>t.type==='give'&&t.otherId===otherId);
+  const recv=tradeQueue.filter(t=>t.type==='recv'&&t.otherId===otherId);
+  if(!give.length&&!recv.length){showToast('Sem trocas possíveis com '+otherName);return;}
+  const lines=['Panini WC2026 — Trocas com '+otherName,'='.repeat(44),''];
+  if(give.length){
+    lines.push('Posso dar:');
+    give.forEach(t=>{const s=BY_ID[t.stickerId];lines.push('  '+(s.displayId||s.id)+' — '+s.shortName);});
+    lines.push('');
+  }
+  if(recv.length){
+    lines.push('Posso receber:');
+    recv.forEach(t=>{const s=BY_ID[t.stickerId];lines.push('  '+(s.displayId||s.id)+' — '+s.shortName);});
+    lines.push('');
+  }
+  const a=document.createElement('a');
+  a.href=URL.createObjectURL(new Blob([lines.join('\n')],{type:'text/plain'}));
+  a.download='trocas-'+otherId+'.txt';a.click();
 };
 
 window.renderStats=async function(){
