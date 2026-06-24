@@ -722,8 +722,6 @@ window.renderStats=async function(){
   }
 };
 
-const collectionsCache={};
-
 async function loadCollections(){
   const loadEl=document.getElementById('collections-loading');
   const listEl=document.getElementById('collection-list');
@@ -731,7 +729,6 @@ async function loadCollections(){
   try{
     const snap=await getDocs(collection(db,COL));
     const cols=snap.docs.map(d=>({id:d.id,...d.data()}));
-    cols.forEach(c=>{collectionsCache[c.id]=c;});
     loadEl.style.display='none';listEl.style.display='flex';
     listEl.innerHTML=!cols.length
       ?'<div style="text-align:center;color:var(--muted);padding:16px 0;font-size:14px">Ainda não tens coleções — cria a primeira abaixo 👇</div>'
@@ -746,7 +743,6 @@ async function loadCollections(){
               <div class="col-progress">${owned} / ${TOTAL_MAIN} cromos (${pct}%)${dupes>0?` &middot; <span style="color:var(--amber)">${dupes} repetidos</span>`:''}</div>
               <div class="progress-bar"><div class="progress-fill" style="width:${pct}%"></div></div>
             </div>
-            ${dupes>0?`<button style="padding:6px 10px;background:var(--bg3);border:1px solid var(--amber);border-radius:6px;font-size:11px;font-weight:700;color:var(--amber);flex-shrink:0;margin-right:4px" onclick="event.stopPropagation();exportColDupes(${q(c.id)},${q(c.name)})">📋</button>`:''}
             <div class="col-arrow">›</div>
           </div>`;
         }).join('');
@@ -755,21 +751,7 @@ async function loadCollections(){
   }
 }
 
-window.exportColDupes=function(colId,colName){
-  const c=collectionsCache[colId];
-  if(!c)return;
-  const dupes=STICKERS.filter(s=>(c.stickers?.[s.id]?.d||0)>0);
-  if(!dupes.length){showToast('Sem repetidos em '+colName);return;}
-  const lines=['Panini FIFA World Cup 2026™ — Repetidos: '+colName,'='.repeat(44),''];
-  groupByTeam(dupes).forEach(({teamName,items})=>{
-    lines.push(teamName+':');
-    items.forEach(s=>lines.push('  '+(s.displayId||s.id)+' — '+s.shortName+' (x'+c.stickers[s.id].d+')'));
-    lines.push('');
-  });
-  const a=document.createElement('a');
-  a.href=URL.createObjectURL(new Blob([lines.join('\n')],{type:'text/plain'}));
-  a.download='repetidos-'+colId+'.txt';a.click();
-};
+
 
 window.openCollection=async function(colId,colName){
   if(isAuth(colId)){await enterCollection(colId,colName);return;}
