@@ -589,7 +589,7 @@ window.renderTrades=async function(){
           <div class="trade-col-name">${esc(o.name)}</div>
           ${canGive.length?`<span class="trade-pill give">${canGive.length} para dar</span>`:''}
           ${canRecv.length?`<span class="trade-pill recv">${canRecv.length} para receber</span>`:''}
-          ${(canGive.length||canRecv.length)?`<button class="export-btn" style="margin-left:4px;padding:5px 9px;font-size:11px" onclick="exportTradeWith(${q(o.id)},${q(o.name)})">📋</button>`:''}
+          <button class="export-btn" style="padding:5px 9px;font-size:11px" onclick="exportTradeWith(${q(o.id)},${q(o.name)})">📋</button>
         </div>
         ${giveSection}${recvSection}
       </div>`;
