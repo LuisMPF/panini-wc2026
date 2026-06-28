@@ -275,6 +275,7 @@ input{font-family:'Barlow',sans-serif}
   </div>
 
   <div id="view-browser" class="view">
+    <div class="search-bar" style="margin-bottom:8px"><input class="search-input" id="browser-search" type="text" placeholder="Pesquisar cromo, equipa ou jogador..." oninput="browserSearch()"/></div>
     <div class="browser-tabs" id="browser-tabs"></div>
     <div id="browser-content"></div>
   </div>
@@ -896,12 +897,56 @@ function renderDashboard(){
 }
 
 function renderBrowser(){
+  document.getElementById('browser-search').value='';
+  document.getElementById('browser-tabs').style.display='';
   const tabs=['✦',...GROUPS,'X'];
   document.getElementById('browser-tabs').innerHTML=tabs.map(g=>
     `<button class="tab-btn${g===activeBG?' active':''}" onclick="setBG('${g}')">${g==='✦'?'Especiais':g==='X'?'Extra':'Grupo '+g}</button>`
   ).join('');
   renderBrowserContent();
 }
+
+window.browserSearch=function(){
+  const q2=(document.getElementById('browser-search').value||'').toLowerCase().trim();
+  const tabsEl=document.getElementById('browser-tabs');
+  const contentEl=document.getElementById('browser-content');
+  if(!q2){tabsEl.style.display='';renderBrowserContent();return;}
+  tabsEl.style.display='none';
+  const results=STICKERS.filter(s=>
+    s.id.toLowerCase().includes(q2)||
+    (s.displayId||'').toLowerCase().includes(q2)||
+    s.teamCode.toLowerCase().includes(q2)||
+    s.teamName.toLowerCase().includes(q2)||
+    s.name.toLowerCase().includes(q2)||
+    s.shortName.toLowerCase().includes(q2)
+  ).slice(0,60);
+  if(!results.length){
+    contentEl.innerHTML='<div class="empty-state"><div class="empty-icon">🔍</div><div class="empty-text">Sem resultados</div><div class="empty-sub">Tenta outro código ou nome</div></div>';
+    return;
+  }
+  contentEl.innerHTML='<div class="list-group">'+results.map(s=>{
+    const st=state[s.id]||{o:false,d:0};
+    const bStyle=st.o?'border-color:var(--accent);color:var(--accent)':'';
+    return `<div class="list-item" id="sr-${s.id}">
+      <span class="li-id">${s.displayId||s.id}</span>
+      <span style="font-size:16px;flex-shrink:0">${s.teamFlag}</span>
+      <span class="li-name">${esc(s.shortName)}</span>
+      ${s.foil?'<span class="li-foil">✦</span>':''}
+      ${st.d>0?`<span style="font-size:10px;color:var(--amber);font-weight:700;flex-shrink:0">+${st.d}</span>`:''}
+      <button class="li-btn" style="${bStyle}" onclick="toggleFromSearch('${s.id}',this)">${st.o?'✓ Tenho':'+ Marcar'}</button>
+    </div>`;
+  }).join('')+'</div>';
+};
+
+window.toggleFromSearch=function(id,btn){
+  const st=state[id]||{o:false,d:0};
+  st.o=!st.o;state[id]=st;
+  saveSticker(id);updateCell(id);
+  btn.textContent=st.o?'✓ Tenho':'+ Marcar';
+  btn.style.borderColor=st.o?'var(--accent)':'';
+  btn.style.color=st.o?'var(--accent)':'';
+  showToast(st.o?'✅ Cromo marcado!':'↩ Removido');
+};
 
 window.setBG=function(g){
   activeBG=g;expandedTeam=null;
