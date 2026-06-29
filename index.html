@@ -294,7 +294,11 @@ input{font-family:'Barlow',sans-serif}
     <div class="stats-bar">
       <span>Para trocar:</span><span class="stats-count" id="dupe-total">0</span>
       <span style="color:var(--muted);font-size:12px">repetidos</span>
-      <button class="export-btn" onclick="exportTradingList()">📋 Exportar lista</button>
+      <div style="display:flex;gap:6px;margin-left:auto">
+        <button class="export-btn" id="dsort-group" onclick="setDupesSort('group')" style="padding:4px 10px">Por Grupo</button>
+        <button class="export-btn" id="dsort-alpha" onclick="setDupesSort('alpha')" style="padding:4px 10px">A-Z</button>
+        <button class="export-btn" onclick="exportTradingList()">📋 Exportar lista</button>
+      </div>
     </div>
     <div id="dupe-list"></div>
   </div>
@@ -479,6 +483,7 @@ const TOTAL_MAIN=STICKERS.filter(s=>s.section!=='EXTRA').length;
 
 let curId=null,curName=null,state={},activeBG='A',expandedTeam=null;
 let tradeQueue=[];
+let dupesSort='group';
 const saveTimers={};
 let missingCache=[];
 
@@ -1098,18 +1103,39 @@ window.markOwned=function(id){
   saveSticker(id);renderMissing();showToast('✅ Cromo marcado!');
 };
 
+window.setDupesSort=function(mode){
+  dupesSort=mode;
+  document.getElementById('dsort-group').style.color=mode==='group'?'var(--accent)':'';
+  document.getElementById('dsort-group').style.borderColor=mode==='group'?'var(--accent)':'';
+  document.getElementById('dsort-alpha').style.color=mode==='alpha'?'var(--accent)':'';
+  document.getElementById('dsort-alpha').style.borderColor=mode==='alpha'?'var(--accent)':'';
+  renderDuplicates();
+};
+
 function renderDuplicates(){
   const dupes=STICKERS.filter(s=>(state[s.id]?.d||0)>0);
   document.getElementById('dupe-total').textContent=dupes.reduce((sum,s)=>sum+(state[s.id]?.d||0),0);
+  // keep sort buttons in sync
+  ['group','alpha'].forEach(m=>{
+    const btn=document.getElementById('dsort-'+m);
+    if(btn){btn.style.color=dupesSort===m?'var(--accent)':'';btn.style.borderColor=dupesSort===m?'var(--accent)':'';}
+  });
   const el=document.getElementById('dupe-list');
   if(!dupes.length){
     el.innerHTML='<div class="empty-state"><div class="empty-icon">✨</div><div class="empty-text">Sem repetidos por agora</div><div class="empty-sub">Quando tiveres cromos repetidos aparecem aqui para facilitar trocas</div></div>';
     return;
   }
-  el.innerHTML=groupByTeam(dupes).map(({teamName,teamFlag,items})=>
-    `<div class="list-group"><div class="list-group-header"><span class="lg-flag">${teamFlag}</span><span class="lg-name">${esc(teamName)}</span></div>`+
-    items.map(s=>`<div class="list-item"><span class="li-id">${s.displayId||s.id}</span>${s.foil?'<span class="li-foil">✦ Foil</span>':''}<div class="dupe-controls"><button class="dupe-btn" onclick="changeDupe('${s.id}',-1)">−</button><span class="dupe-count">${state[s.id]?.d||0}</span><button class="dupe-btn" onclick="changeDupe('${s.id}',1)">+</button></div></div>`).join('')+'</div>'
-  ).join('');
+  if(dupesSort==='alpha'){
+    const sorted=[...dupes].sort((a,b)=>(a.displayId||a.id).localeCompare(b.displayId||b.id));
+    el.innerHTML='<div class="list-group">'+sorted.map(s=>
+      `<div class="list-item"><span class="li-id">${s.displayId||s.id}</span><span style="font-size:14px;flex-shrink:0">${s.teamFlag}</span><span class="li-name" style="flex:1;font-size:12px;color:var(--muted)">${esc(s.teamName)}</span>${s.foil?'<span class="li-foil">✦ Foil</span>':''}<div class="dupe-controls"><button class="dupe-btn" onclick="changeDupe('${s.id}',-1)">−</button><span class="dupe-count">${state[s.id]?.d||0}</span><button class="dupe-btn" onclick="changeDupe('${s.id}',1)">+</button></div></div>`
+    ).join('')+'</div>';
+  }else{
+    el.innerHTML=groupByTeam(dupes).map(({teamName,teamFlag,items})=>
+      `<div class="list-group"><div class="list-group-header"><span class="lg-flag">${teamFlag}</span><span class="lg-name">${esc(teamName)}</span></div>`+
+      items.map(s=>`<div class="list-item"><span class="li-id">${s.displayId||s.id}</span>${s.foil?'<span class="li-foil">✦ Foil</span>':''}<div class="dupe-controls"><button class="dupe-btn" onclick="changeDupe('${s.id}',-1)">−</button><span class="dupe-count">${state[s.id]?.d||0}</span><button class="dupe-btn" onclick="changeDupe('${s.id}',1)">+</button></div></div>`).join('')+'</div>'
+    ).join('');
+  }
 }
 
 window.changeDupe=function(id,delta){
