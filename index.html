@@ -1149,7 +1149,7 @@ window.exportTradingList=function(){
   const lines=['Panini FIFA World Cup 2026™ — Repetidos para troca','='.repeat(44),''];
   groupByTeam(dupes).forEach(({teamName,items})=>{
     lines.push(teamName+':');
-    items.forEach(s=>lines.push('  '+(s.displayId||s.id)+' — '+s.shortName+' (x'+(state[s.id]?.d)+')'));
+    items.forEach(s=>lines.push('  '+(s.displayId||s.id)+' x'+(state[s.id]?.d)));
     lines.push('');
   });
   const a=document.createElement('a');
@@ -1163,7 +1163,7 @@ window.exportMissingList=function(){
   const lines=['Panini FIFA World Cup 2026™ — Cromos em Falta','='.repeat(44),'',`Total em falta: ${missing.length} / ${TOTAL_MAIN}`,''];
   groupByTeam(missing).forEach(({teamName,items})=>{
     lines.push(teamName+':');
-    items.forEach(s=>lines.push('  '+(s.displayId||s.id)+' — '+s.shortName));
+    items.forEach(s=>lines.push('  '+(s.displayId||s.id)));
     lines.push('');
   });
   const a=document.createElement('a');
