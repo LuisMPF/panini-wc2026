@@ -378,7 +378,7 @@ const INVITE_CODE='GonçaloMundial2026';
 
 const TEAMS=[
   {code:'MEX',name:'Mexico',group:'A',flag:'🇲🇽'},
-  {code:'ZAF',name:'South Africa',group:'A',flag:'🇿🇦'},
+  {code:'ZAF',displayCode:'RSA',name:'South Africa',group:'A',flag:'🇿🇦'},
   {code:'KOR',name:'Korea Republic',group:'A',flag:'🇰🇷'},
   {code:'CZE',name:'Czechia',group:'A',flag:'🇨🇿'},
   {code:'CAN',name:'Canada',group:'B',flag:'🇨🇦'},
@@ -466,7 +466,9 @@ function buildStickers(){
   TEAMS.forEach(t=>{
     for(let n=1;n<=20;n++){
       const sn=n===1?'Escudo':n===2?'Equipa':`Jogador ${n-2}`;
-      s.push({id:`${t.code}${n}`,section:t.code,group:t.group,teamCode:t.code,teamName:t.name,teamFlag:t.flag,name:`${t.name} - ${sn}`,shortName:sn,foil:n===1,num:n});
+      const entry={id:`${t.code}${n}`,section:t.code,group:t.group,teamCode:t.code,teamName:t.name,teamFlag:t.flag,name:`${t.name} - ${sn}`,shortName:sn,foil:n===1,num:n};
+      if(t.displayCode)entry.displayId=`${t.displayCode}${n}`;
+      s.push(entry);
     }
   });
   EXTRA_PLAYERS.forEach(p=>{
@@ -826,7 +828,7 @@ async function enterCollection(colId,colName){
   setNavVisible(true);
   try{
     const snap=await getDoc(doc(db,COL,colId));
-    state=snap.exists()?(snap.data().stickers||{}):{};
+    state=snap.exists()?(snap.data().stickers||{}):{}
   }catch(e){state={};}
   navTo('dashboard');
 }
@@ -868,7 +870,7 @@ function renderDashboard(){
   document.getElementById('dash-pct').textContent=pct+'%';
   document.getElementById('stat-owned').textContent=mainOwned;
   document.getElementById('stat-missing').textContent=TOTAL_MAIN-mainOwned;
-  document.getElementById('stat-dupes').textContent=vals.filter(s=>s.d>0).length;
+  document.getElementById('stat-dupes').textContent=vals.reduce((sum,s)=>sum+(s.d||0),0);
   let complete=0;
   TEAMS.forEach(t=>{if(Array.from({length:20},(_,i)=>`${t.code}${i+1}`).every(id=>state[id]?.o))complete++;});
   document.getElementById('stat-teams').textContent=complete+'/48';
@@ -1115,10 +1117,9 @@ window.setDupesSort=function(mode){
 function renderDuplicates(){
   const dupes=STICKERS.filter(s=>(state[s.id]?.d||0)>0);
   document.getElementById('dupe-total').textContent=dupes.reduce((sum,s)=>sum+(state[s.id]?.d||0),0);
-  // keep sort buttons in sync
   ['group','alpha'].forEach(m=>{
     const btn=document.getElementById('dsort-'+m);
-    if(btn){btn.style.color=dupesSort===m?'var(--accent)':'';btn.style.borderColor=dupesSort===m?'var(--accent)':'';}
+    if(btn){btn.style.color=dupesSort===m?'var(--accent)':'';btn.style.borderColor=dupesSort===m?'var(--accent)':'';}  
   });
   const el=document.getElementById('dupe-list');
   if(!dupes.length){
