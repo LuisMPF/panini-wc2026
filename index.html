@@ -762,8 +762,8 @@ async function loadCollections(){
     listEl.innerHTML=!cols.length
       ?'<div style="text-align:center;color:var(--muted);padding:16px 0;font-size:14px">Ainda não tens coleções — cria a primeira abaixo 👇</div>'
       :cols.map(c=>{
-          const owned=c.stickers?Object.entries(c.stickers).filter(([id,s])=>s.o&&BY_ID[id]?.section!=='EXTRA').length:0;
-          const dupes=c.stickers?Object.values(c.stickers).reduce((sum,s)=>sum+(s.d||0),0):0;
+          const owned=STICKERS.filter(s=>s.section!=='EXTRA'&&c.stickers?.[s.id]?.o).length;
+          const dupes=STICKERS.reduce((sum,s)=>sum+(c.stickers?.[s.id]?.d||0),0);
           const pct=Math.round(owned/TOTAL_MAIN*100);
           return `<div class="collection-card" onclick="openCollection(${q(c.id)},${q(c.name)})">
             <div class="col-icon">⚽</div>
@@ -828,7 +828,7 @@ async function enterCollection(colId,colName){
   setNavVisible(true);
   try{
     const snap=await getDoc(doc(db,COL,colId));
-    state=snap.exists()?(snap.data().stickers||{}):{}
+    state=snap.exists()?(snap.data().stickers||{}):{};
   }catch(e){state={};}
   navTo('dashboard');
 }
@@ -976,7 +976,7 @@ function renderBrowserContent(){
         <div class="team-count${to===20?' complete':''}">${to}/20</div>
         <div class="team-chevron">⏄</div>
       </div>
-      <div class="sticker-grid${exp?' visible':''}">${ids.map(id=>cellHtml(id)).join('')}</div>
+      <div class="sticker-grid${exp?' visible':''}">` + ids.map(id=>cellHtml(id)).join('') + `</div>
     </div>`;
   }).join('');
 }
@@ -1119,7 +1119,7 @@ function renderDuplicates(){
   document.getElementById('dupe-total').textContent=dupes.reduce((sum,s)=>sum+(state[s.id]?.d||0),0);
   ['group','alpha'].forEach(m=>{
     const btn=document.getElementById('dsort-'+m);
-    if(btn){btn.style.color=dupesSort===m?'var(--accent)':'';btn.style.borderColor=dupesSort===m?'var(--accent)':'';}  
+    if(btn){btn.style.color=dupesSort===m?'var(--accent)':'';btn.style.borderColor=dupesSort===m?'var(--accent)':'';}
   });
   const el=document.getElementById('dupe-list');
   if(!dupes.length){
